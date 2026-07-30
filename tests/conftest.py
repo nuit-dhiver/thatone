@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from proper_search.config import Settings, StorageSettings
-from proper_search.models import (
+from thatone.config import Settings, StorageSettings
+from thatone.models import (
     Confidence,
     Description,
     FrameNote,
@@ -17,7 +17,7 @@ from proper_search.models import (
     MediaStatus,
     SourceType,
 )
-from proper_search.store.sqlite.backend import SQLiteBackend
+from thatone.store.sqlite.backend import SQLiteBackend
 
 
 @pytest.fixture

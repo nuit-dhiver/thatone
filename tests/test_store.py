@@ -6,8 +6,8 @@ import time
 
 import pytest
 
-from proper_search.errors import IndexConsistencyError, StorageError
-from proper_search.models import (
+from thatone.errors import IndexConsistencyError, StorageError
+from thatone.models import (
     Chunk,
     ChunkKind,
     JobKind,
@@ -17,7 +17,7 @@ from proper_search.models import (
     SearchFilters,
     SourceType,
 )
-from proper_search.store.sqlite.backend import SQLiteBackend, build_fts_query
+from thatone.store.sqlite.backend import SQLiteBackend, build_fts_query
 
 from .conftest import make_description, make_media
 
@@ -339,7 +339,7 @@ class TestChunksAndVectors:
         store.save_embeddings([(ids[0], [1.0, 0.0, 0.0, 0.0])])
         store.close()
 
-        from proper_search.config import StorageSettings
+        from thatone.config import StorageSettings
 
         reopened = SQLiteBackend(StorageSettings(path=store.path))
         reopened.initialize()

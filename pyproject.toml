@@ -3,12 +3,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "proper-search"
+name = "thatone"
 version = "0.1.0"
 description = "Search GIFs and videos by what happens inside them, not by their filename."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
+license-files = ["LICENSE"]
 dependencies = [
     "pydantic>=2.7",
     "pydantic-settings>=2.3",
@@ -32,10 +33,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Mohammad-Hossein-Emami/proper-search"
+Homepage = "https://github.com/Mohammad-Hossein-Emami/thatone"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/proper_search"]
+packages = ["src/thatone"]
 
 [tool.ruff]
 line-length = 100
@@ -56,7 +57,7 @@ markers = [
 
 [tool.mypy]
 python_version = "3.11"
-packages = ["proper_search"]
+packages = ["thatone"]
 mypy_path = "src"
 strict = true
 warn_unreachable = true

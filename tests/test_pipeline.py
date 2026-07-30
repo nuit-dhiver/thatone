@@ -11,12 +11,12 @@ from pathlib import Path
 
 import pytest
 
-from proper_search.config import Settings, StorageSettings
-from proper_search.embed.chunking import build_chunks, split_text
-from proper_search.embed.providers import StubEmbeddingProvider
-from proper_search.errors import MediaError, MediaTooLargeError
-from proper_search.indexer import Indexer
-from proper_search.models import (
+from thatone.config import Settings, StorageSettings
+from thatone.embed.chunking import build_chunks, split_text
+from thatone.embed.providers import StubEmbeddingProvider
+from thatone.errors import MediaError, MediaTooLargeError
+from thatone.indexer import Indexer
+from thatone.models import (
     ChunkKind,
     Confidence,
     Description,
@@ -25,14 +25,14 @@ from proper_search.models import (
     MediaStatus,
     SearchFilters,
 )
-from proper_search.search.fusion import collapse_to_best, reciprocal_rank_fusion
-from proper_search.search.pipeline import (
+from thatone.search.fusion import collapse_to_best, reciprocal_rank_fusion
+from thatone.search.pipeline import (
     SIGNAL_DENSE,
     SIGNAL_MEDIA_LEXICAL,
     SearchPipeline,
 )
-from proper_search.store.sqlite.backend import SQLiteBackend
-from proper_search.vision.providers.stub import StubVisionProvider
+from thatone.store.sqlite.backend import SQLiteBackend
+from thatone.vision.providers.stub import StubVisionProvider
 
 from . import fixtures
 
@@ -398,7 +398,7 @@ class TestSearch:
 
         class BrokenEmbedder(StubEmbeddingProvider):
             async def embed(self, texts, *, input_type=None):  # type: ignore[override]
-                from proper_search.errors import ProviderUnavailable
+                from thatone.errors import ProviderUnavailable
 
                 raise ProviderUnavailable("embedding provider is down")
 
@@ -439,7 +439,7 @@ class TestRerank:
         )
 
     async def test_rerank_failure_does_not_lose_results(self, env, tmp_path: Path) -> None:
-        from proper_search.errors import ProviderUnavailable
+        from thatone.errors import ProviderUnavailable
 
         paths = [fixtures.reaction_gif(tmp_path / f"r{i}.gif", frames=6 + i) for i in range(3)]
         await env.indexer.index_paths(paths)
@@ -499,7 +499,7 @@ class TestEvalHarness:
     async def test_scores_each_signal_separately(self, env, tmp_path: Path) -> None:
         """Reporting signals in isolation is what shows whether fusion earns
         its keep, rather than just that search works."""
-        from proper_search.eval import EvalHarness, GoldenQuery
+        from thatone.eval import EvalHarness, GoldenQuery
 
         ids = await self._indexed(env, tmp_path)
         golden = [
@@ -519,7 +519,7 @@ class TestEvalHarness:
             assert set(result.recall_at) == {1, 5, 10}
 
     async def test_a_clip_is_findable_by_its_own_description(self, env, tmp_path: Path) -> None:
-        from proper_search.eval import EvalHarness, GoldenQuery
+        from thatone.eval import EvalHarness, GoldenQuery
 
         ids = await self._indexed(env, tmp_path)
         golden = [
@@ -531,7 +531,7 @@ class TestEvalHarness:
         assert fused.recall_at[10] == 1.0, f"misses: {[m.query for m in fused.misses]}"
 
     async def test_unanswerable_queries_are_reported_as_misses(self, env, tmp_path: Path) -> None:
-        from proper_search.eval import EvalHarness, GoldenQuery, format_report
+        from thatone.eval import EvalHarness, GoldenQuery, format_report
 
         await self._indexed(env, tmp_path)
         golden = [GoldenQuery(query="zzz qqq xxx", expected=["nonexistent"], note="impossible")]
@@ -546,7 +546,7 @@ class TestEvalHarness:
     async def test_dense_configs_are_skipped_without_an_embedder(self, env, tmp_path: Path) -> None:
         """Skipping beats reporting a zero, which would read as a regression
         rather than a missing provider."""
-        from proper_search.eval import EvalHarness, GoldenQuery
+        from thatone.eval import EvalHarness, GoldenQuery
 
         ids = await self._indexed(env, tmp_path)
         golden = [GoldenQuery(query="man office", expected=[ids[0]])]
@@ -554,7 +554,7 @@ class TestEvalHarness:
         assert {r.name for r in results} == {"lexical only"}
 
     async def test_golden_set_roundtrips_through_json(self, tmp_path: Path) -> None:
-        from proper_search.eval import GoldenQuery, load_golden_set, save_golden_set
+        from thatone.eval import GoldenQuery, load_golden_set, save_golden_set
 
         original = [
             GoldenQuery(query="the guy who slowly turns around", expected=["a" * 64], note="vague")
@@ -567,7 +567,7 @@ class TestEvalHarness:
         assert loaded[0].note == "vague"
 
     async def test_empty_golden_set(self, env) -> None:
-        from proper_search.eval import EvalHarness, format_report
+        from thatone.eval import EvalHarness, format_report
 
         results = await EvalHarness(env.store, env.embedder, env.settings.search).run([])
         assert results == []

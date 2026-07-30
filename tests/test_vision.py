@@ -9,18 +9,18 @@ from typing import Any, ClassVar
 import pytest
 from pydantic import BaseModel, ConfigDict, Field
 
-from proper_search.config import VisionSettings
-from proper_search.errors import (
+from thatone.config import VisionSettings
+from thatone.errors import (
     ProviderRateLimited,
     ProviderRefusal,
     ProviderResponseInvalid,
 )
-from proper_search.models import Description, FrameSample
-from proper_search.vision import prompts
-from proper_search.vision.base import VisionRequest, estimate_image_tokens
-from proper_search.vision.providers.stub import StubVisionProvider
-from proper_search.vision.schema import to_api_schema
-from proper_search.vision.strategies import (
+from thatone.models import Description, FrameSample
+from thatone.vision import prompts
+from thatone.vision.base import VisionRequest, estimate_image_tokens
+from thatone.vision.providers.stub import StubVisionProvider
+from thatone.vision.schema import to_api_schema
+from thatone.vision.strategies import (
     SequentialStrategy,
     SingleCallStrategy,
     TwoPassStrategy,
@@ -306,7 +306,7 @@ def fake_response(
 @pytest.fixture
 def anthropic_provider():
     pytest.importorskip("anthropic")
-    from proper_search.vision.providers.anthropic import AnthropicVisionProvider
+    from thatone.vision.providers.anthropic import AnthropicVisionProvider
 
     # Never issues a request; only the response-handling logic is exercised.
     return AnthropicVisionProvider(VisionSettings(model="claude-sonnet-5"), api_key="test-key")
@@ -323,7 +323,7 @@ class TestAnthropicResponseHandling:
 
     def test_refusal_is_terminal_not_retryable(self, anthropic_provider: Any) -> None:
         """Retrying sends identical frames to an identical classifier."""
-        from proper_search.errors import RetryableError, TerminalError
+        from thatone.errors import RetryableError, TerminalError
 
         assert issubclass(ProviderRefusal, TerminalError)
         assert not issubclass(ProviderRefusal, RetryableError)

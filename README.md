@@ -1,4 +1,4 @@
-# proper-search
+# thatone
 
 Find GIFs and videos by **what happens inside them**, not by their filename.
 
@@ -35,10 +35,10 @@ install needed.
 
 ```python
 import asyncio
-from proper_search import ProperSearch, Settings
+from thatone import ThatOne, Settings
 
 async def main():
-    async with ProperSearch.open(Settings()) as engine:
+    async with ThatOne.open(Settings()) as engine:
         await engine.index(["./gifs"])
 
         hits, diagnostics = await engine.search("cat knocking a glass off a table")
@@ -70,7 +70,7 @@ print(estimate.summary())
 ### HTTP API
 
 ```bash
-uvicorn proper_search.api:create_app --factory --port 8000
+uvicorn thatone.api:create_app --factory --port 8000
 ```
 
 | Endpoint | Purpose |
@@ -128,13 +128,13 @@ comparable. If one signal fails, search degrades to the other and *says so* in
 ## Configuration
 
 Layered, highest priority first: keyword arguments → environment →
-`proper-search.yaml` → defaults. Nested values use a double underscore:
+`thatone.yaml` → defaults. Nested values use a double underscore:
 
 ```bash
-export PROPER_SEARCH__VISION__MODEL=claude-opus-5
+export THATONE__VISION__MODEL=claude-opus-5
 ```
 
-See [`proper-search.example.yaml`](proper-search.example.yaml) for every option
+See [`thatone.example.yaml`](thatone.example.yaml) for every option
 annotated. Credentials are named by environment variable (`api_key_env`), never
 inlined, so a config file is safe to commit.
 
@@ -164,7 +164,7 @@ There is no UI, so relevance regressions are invisible unless measured. The eval
 harness is the feedback loop:
 
 ```python
-from proper_search.eval import EvalHarness, GoldenQuery, format_report
+from thatone.eval import EvalHarness, GoldenQuery, format_report
 
 golden = [
     GoldenQuery(query="the guy who slowly turns around",

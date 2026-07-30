@@ -15,24 +15,24 @@ pytest.importorskip("fastapi")
 
 from fastapi.testclient import TestClient
 
-from proper_search.api.app import create_app
-from proper_search.config import Settings, StorageSettings
-from proper_search.embed.providers import StubEmbeddingProvider
-from proper_search.engine import ProperSearch
-from proper_search.errors import (
+from thatone.api.app import create_app
+from thatone.config import Settings, StorageSettings
+from thatone.embed.providers import StubEmbeddingProvider
+from thatone.engine import ThatOne
+from thatone.errors import (
     IndexConsistencyError,
     MediaTooLargeError,
     ProviderRefusal,
     ProviderUnavailable,
 )
-from proper_search.store.sqlite.backend import SQLiteBackend
-from proper_search.vision.providers.stub import StubVisionProvider
+from thatone.store.sqlite.backend import SQLiteBackend
+from thatone.vision.providers.stub import StubVisionProvider
 
 from . import fixtures
 
 
 @pytest.fixture
-def engine(tmp_path: Path) -> AsyncIterator[ProperSearch]:
+def engine(tmp_path: Path) -> AsyncIterator[ThatOne]:
     settings = Settings(
         storage=StorageSettings(path=tmp_path / "api.db", blob_dir=tmp_path / "blobs"),
         vision={"provider": "stub", "model": "stub-vision-1"},
@@ -41,7 +41,7 @@ def engine(tmp_path: Path) -> AsyncIterator[ProperSearch]:
     )
     store = SQLiteBackend(settings.storage)
     store.initialize()
-    built = ProperSearch(
+    built = ThatOne(
         settings,
         store,
         StubVisionProvider(settings=settings.vision),
@@ -52,7 +52,7 @@ def engine(tmp_path: Path) -> AsyncIterator[ProperSearch]:
 
 
 @pytest.fixture
-def client(engine: ProperSearch) -> TestClient:
+def client(engine: ThatOne) -> TestClient:
     with TestClient(create_app(engine=engine)) as test_client:
         yield test_client
 
@@ -86,7 +86,7 @@ class TestOps:
         assert body["dense_search_available"] is True
 
     def test_healthz_reports_degraded_capability_rather_than_failing(
-        self, engine: ProperSearch
+        self, engine: ThatOne
     ) -> None:
         """An index with no embedding key still serves lexical search; the
         operator needs to see which half is missing, not a 500."""
@@ -252,7 +252,7 @@ class TestSearchRoute:
             assert client.get("/search", params={"q": hostile}).status_code == 200
 
     def test_degraded_signal_is_surfaced_to_the_client(
-        self, engine: ProperSearch, gifs: list[Path]
+        self, engine: ThatOne, gifs: list[Path]
     ) -> None:
         """Partial results are reported as partial, not passed off as complete."""
         with TestClient(create_app(engine=engine)) as first:
@@ -312,7 +312,7 @@ class TestMediaRoutes:
         assert response.content.startswith(b"RIFF")
 
     def test_reindex_without_redescribe_skips_the_vision_call(
-        self, client: TestClient, engine: ProperSearch, gifs: list[Path]
+        self, client: TestClient, engine: ThatOne, gifs: list[Path]
     ) -> None:
         """The cheap path: re-embed from the stored description, no vision spend."""
         media_id = index_all(client, gifs)["media_ids"][0]
@@ -325,7 +325,7 @@ class TestMediaRoutes:
         assert len(engine.vision.calls) == calls_before, "no vision call should have been made"
 
     def test_reindex_with_redescribe_calls_the_model(
-        self, client: TestClient, engine: ProperSearch, gifs: list[Path]
+        self, client: TestClient, engine: ThatOne, gifs: list[Path]
     ) -> None:
         media_id = index_all(client, gifs)["media_ids"][0]
         calls_before = len(engine.vision.calls)
@@ -357,7 +357,7 @@ class TestJobRoutes:
         assert {j["kind"] for j in done} == {"describe", "embed"}
 
     def test_failed_jobs_record_a_reason(
-        self, client: TestClient, engine: ProperSearch, gifs: list[Path]
+        self, client: TestClient, engine: ThatOne, gifs: list[Path]
     ) -> None:
         """A refusal is terminal and must be explicable without reading logs."""
         engine.vision.fail_with = ProviderRefusal("declined")
@@ -397,7 +397,7 @@ class TestEstimateRoute:
         assert body["total_cost"] == 0.0
 
     def test_estimate_prices_a_known_model(
-        self, client: TestClient, engine: ProperSearch, gifs: list[Path]
+        self, client: TestClient, engine: ThatOne, gifs: list[Path]
     ) -> None:
         engine.settings.vision.model = "claude-sonnet-5"
         body = client.post(
@@ -410,7 +410,7 @@ class TestEstimateRoute:
 
 class TestErrorMapping:
     def test_index_consistency_becomes_409(
-        self, client: TestClient, engine: ProperSearch, gifs: list[Path]
+        self, client: TestClient, engine: ThatOne, gifs: list[Path]
     ) -> None:
         """Mixed embedding spaces are a conflict a client can act on, not a 500."""
         index_all(client, gifs)
@@ -423,7 +423,7 @@ class TestErrorMapping:
         assert response.json()["error"] == IndexConsistencyError.__name__
 
     def test_oversized_media_becomes_413(
-        self, client: TestClient, engine: ProperSearch, tmp_path: Path
+        self, client: TestClient, engine: ThatOne, tmp_path: Path
     ) -> None:
         engine.settings.fetch.max_bytes = 10
         path = fixtures.reaction_gif(tmp_path / "big.gif", frames=10)
@@ -433,7 +433,7 @@ class TestErrorMapping:
         assert body["accepted"] == 0
 
     def test_transient_provider_failure_maps_to_503(
-        self, client: TestClient, engine: ProperSearch, gifs: list[Path]
+        self, client: TestClient, engine: ThatOne, gifs: list[Path]
     ) -> None:
         index_all(client, gifs)
         media_id = client.get("/media").json()[0]["id"]
@@ -443,7 +443,7 @@ class TestErrorMapping:
         assert response.json()["kind"] == "transient"
 
     def test_terminal_errors_are_labelled_as_such(
-        self, client: TestClient, engine: ProperSearch, gifs: list[Path]
+        self, client: TestClient, engine: ThatOne, gifs: list[Path]
     ) -> None:
         index_all(client, gifs)
         media_id = client.get("/media").json()[0]["id"]
@@ -453,7 +453,7 @@ class TestErrorMapping:
         assert response.json()["kind"] == "terminal"
 
     def test_error_type_is_preserved(self) -> None:
-        from proper_search.api.app import _status_for
+        from thatone.api.app import _status_for
 
         assert _status_for(MediaTooLargeError("x")) == 413
         assert _status_for(IndexConsistencyError("x")) == 409
@@ -468,7 +468,7 @@ class TestErrorMapping:
 
 class TestEngine:
     async def test_index_and_search_through_the_library_api(
-        self, engine: ProperSearch, gifs: list[Path]
+        self, engine: ThatOne, gifs: list[Path]
     ) -> None:
         """The library surface the HTTP layer wraps must work on its own."""
         items = await engine.index([str(g) for g in gifs])
@@ -480,11 +480,11 @@ class TestEngine:
         assert diagnostics.candidates_by_signal
 
     async def test_index_accepts_a_directory(
-        self, engine: ProperSearch, gifs: list[Path], tmp_path: Path
+        self, engine: ThatOne, gifs: list[Path], tmp_path: Path
     ) -> None:
         items = await engine.index([tmp_path])
         assert len(items) == len(gifs)
 
-    async def test_close_is_idempotent(self, engine: ProperSearch) -> None:
+    async def test_close_is_idempotent(self, engine: ThatOne) -> None:
         await engine.close()
         await engine.close()

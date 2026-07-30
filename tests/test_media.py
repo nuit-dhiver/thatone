@@ -8,16 +8,16 @@ from pathlib import Path
 import pytest
 from PIL import Image, ImageDraw
 
-from proper_search.config import SamplingSettings
-from proper_search.errors import DecodeError
-from proper_search.media.decode import (
+from thatone.config import SamplingSettings
+from thatone.errors import DecodeError
+from thatone.media.decode import (
     decode_at_indices,
     encode_frame,
     iter_frames,
     probe,
 )
-from proper_search.media.hashing import content_hash, content_hash_file, dhash, hamming, is_similar
-from proper_search.media.sampling import (
+from thatone.media.hashing import content_hash, content_hash_file, dhash, hamming, is_similar
+from thatone.media.sampling import (
     AdaptiveSampler,
     CountSampler,
     FrameMeta,
@@ -26,7 +26,7 @@ from proper_search.media.sampling import (
     sample_frames,
     scan_timeline,
 )
-from proper_search.media.thumbnail import write_poster, write_preview
+from thatone.media.thumbnail import write_poster, write_preview
 
 from . import fixtures
 
